@@ -76,8 +76,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             } else if (data.error === 'openai_quota_exceeded') {
                 // API quota exceeded error
-                showLocalModeWarning();
-                showErrorMessage('OpenAI API quota exceeded. Switching to local mode with limited responses.');
+                showErrorMessage('OpenAI API quota exceeded. Switching to an alternative AI model.');
                 return;
             } else if (data.error === 'openai_rate_limited') {
                 // API rate limited error
@@ -85,8 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             } else if (data.error === 'openai_key_invalid') {
                 // API key invalid error
-                showLocalModeWarning();
-                showErrorMessage('OpenAI API key is invalid. Switching to local mode with limited responses.');
+                showErrorMessage('OpenAI API key is invalid. Switching to an alternative AI model.');
                 return;
             } else if (!response.ok) {
                 throw new Error('Failed to get response');
@@ -100,9 +98,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 updateRemainingMessages(data.remaining_messages);
             }
             
-            // Check if we've switched to local mode
-            if (data.local_mode === true) {
-                showLocalModeWarning();
+            // Check if AI model info is available and update UI
+            if (data.ai_info) {
+                updateAIModelInfo(data.ai_info);
             }
             
             // Scroll to bottom
@@ -282,21 +280,53 @@ document.addEventListener('DOMContentLoaded', function() {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
     
-    // Function to show local mode warning if not already shown
-    function showLocalModeWarning() {
-        // Check if warning already exists
-        if (!document.querySelector('.local-mode-alert')) {
-            const warningDiv = document.createElement('div');
-            warningDiv.className = 'alert alert-warning m-2 local-mode-alert';
-            warningDiv.setAttribute('role', 'alert');
-            warningDiv.innerHTML = `
+    // Function to update the UI based on AI model info
+    function updateAIModelInfo(aiInfo) {
+        // Update page title with AI model name
+        const titleElement = document.querySelector('.card-header h3');
+        if (titleElement) {
+            titleElement.innerHTML = `<i class="fas fa-comment-dots me-2"></i>Chat with ${aiInfo.name}`;
+        }
+        
+        // Remove any existing alerts
+        const existingAlerts = document.querySelectorAll('.model-alert');
+        existingAlerts.forEach(alert => alert.remove());
+        
+        // Add the appropriate alert based on the AI mode
+        const alertDiv = document.createElement('div');
+        alertDiv.setAttribute('role', 'alert');
+        alertDiv.className = 'model-alert m-2 mb-0 alert';
+        
+        if (aiInfo.is_local) {
+            // Local mode alert
+            alertDiv.className += ' alert-warning';
+            alertDiv.innerHTML = `
                 <i class="fas fa-exclamation-triangle me-2"></i>
-                <strong>Running in Local Mode:</strong> OpenAI API is currently unavailable. Responses will be limited.
+                <strong>Running in Local Mode:</strong> External AI APIs are currently unavailable. Responses will be limited.
             `;
-            
-            // Insert after card header
-            const cardHeader = document.querySelector('.card-header');
-            cardHeader.parentNode.insertBefore(warningDiv, cardHeader.nextSibling);
+        } else if (aiInfo.mode === 'deepseek') {
+            // DeepSeek mode alert
+            alertDiv.className += ' alert-info';
+            alertDiv.innerHTML = `
+                <i class="fas fa-robot me-2"></i>
+                <strong>Using DeepSeek AI:</strong> Powered by DeepSeek's free-tier AI model.
+            `;
+        } else if (aiInfo.mode === 'openai') {
+            // OpenAI mode alert
+            alertDiv.className += ' alert-primary';
+            alertDiv.innerHTML = `
+                <i class="fas fa-brain me-2"></i>
+                <strong>Using OpenAI:</strong> Powered by OpenAI's models.
+            `;
+        }
+        
+        // Insert after card header
+        const cardHeader = document.querySelector('.card-header');
+        if (cardHeader) {
+            // Only add if we have a valid AI mode and the alert doesn't already exist
+            if (!document.querySelector(`.model-alert.alert-${aiInfo.mode}`)) {
+                cardHeader.parentNode.insertBefore(alertDiv, cardHeader.nextSibling);
+            }
         }
     }
     

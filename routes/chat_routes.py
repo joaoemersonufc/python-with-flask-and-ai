@@ -70,6 +70,8 @@ def chat():
     
     Rate limited for free tier usage.
     """
+    global current_ai_mode
+    
     try:
         # Check rate limit before processing
         is_limited, limit_info = check_rate_limit()
@@ -177,19 +179,27 @@ def chat():
             # API quota exceeded error
             return jsonify({
                 'error': 'openai_quota_exceeded',
-                'message': 'The OpenAI API quota has been exceeded. Please try again later or contact the administrator.'
+                'message': 'The API quota has been exceeded. Switching to an alternative AI model.'
             }), 503
         elif error_message == "API_RATE_LIMITED":
             # API rate limited error
             return jsonify({
                 'error': 'openai_rate_limited',
-                'message': 'The OpenAI API is currently rate limited. Please try again in a few minutes.'
+                'message': 'The API is currently rate limited. Please try again in a few minutes.'
             }), 429
         elif error_message == "API_KEY_INVALID":
             # API key invalid error
             return jsonify({
                 'error': 'openai_key_invalid',
-                'message': 'The OpenAI API key is invalid or has expired. Please contact the administrator.'
+                'message': 'The API key is invalid or has expired. Switching to an alternative AI model.'
+            }), 401
+        elif error_message == "DEEPSEEK_API_KEY_MISSING":
+            # DeepSeek API key missing
+            logger.error("DeepSeek API key is missing - update current_ai_mode")
+            current_ai_mode = AI_MODE_OPENAI
+            return jsonify({
+                'error': 'deepseek_key_missing',
+                'message': 'The DeepSeek API key is missing. Switching to OpenAI.'
             }), 401
         else:
             # Generic error
