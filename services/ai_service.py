@@ -3,9 +3,10 @@ AI Service module that handles interactions with OpenAI API.
 """
 import os
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Iterable, Union, cast
 
 from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ class AIService:
         # do not change this unless explicitly requested by the user
         self.model = "gpt-4o"
         
-    def get_chat_response(self, messages: List[Dict[str, str]]) -> str:
+    def get_chat_response(self, messages: List[Dict[str, Any]]) -> str:
         """
         Get a response from the OpenAI chat API.
         
@@ -41,9 +42,12 @@ class AIService:
             logger.debug(f"Sending request to OpenAI with {len(messages)} messages")
             
             # Create API request
+            # Cast the messages to the correct type for OpenAI
+            openai_messages = cast(List[ChatCompletionMessageParam], messages)
+            
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=messages,
+                messages=openai_messages,
                 temperature=0.7,
                 max_tokens=800,
             )
