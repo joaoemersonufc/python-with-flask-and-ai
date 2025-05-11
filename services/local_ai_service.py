@@ -2,7 +2,6 @@
 Local AI Service module that simulates AI responses when the API is unavailable.
 """
 import logging
-import json
 import random
 from typing import Dict, List, Any
 

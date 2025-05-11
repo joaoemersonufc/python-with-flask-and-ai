@@ -3,7 +3,7 @@ AI Service module that handles interactions with OpenAI API.
 """
 import os
 import logging
-from typing import Dict, List, Any, Iterable, Union, cast
+from typing import Dict, List, Any, cast
 
 from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam

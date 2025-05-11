@@ -3,13 +3,12 @@ Routes for the chat functionality of the application.
 """
 import logging
 from flask import (
-    Blueprint, render_template, request, jsonify, 
-    session, redirect, url_for, flash
+    Blueprint, render_template, request, jsonify
 )
-from flask_login import current_user, login_required
 
 from services.ai_service import AIService
 from services.local_ai_service import LocalAIService
+from services.deepseek_ai_service import DeepSeekAIService
 from utils.session_utils import get_chat_history, add_message_to_history, clear_chat_history
 from utils.db_rate_limit import check_rate_limit, increment_message_count, get_remaining_messages
 
@@ -19,11 +18,26 @@ logger = logging.getLogger(__name__)
 chat_bp = Blueprint('chat', __name__)
 
 # Initialize AI services
-ai_service = AIService()
-local_ai_service = LocalAIService()
+ai_service = AIService()         # OpenAI service
+deepseek_ai_service = DeepSeekAIService()  # DeepSeek AI service
+local_ai_service = LocalAIService()        # Local fallback service
 
-# Flag to indicate if OpenAI API is usable
-openai_api_available = True
+# AI service mode flags
+AI_MODE_OPENAI = 'openai'
+AI_MODE_DEEPSEEK = 'deepseek'
+AI_MODE_LOCAL = 'local'
+
+# Current AI service mode - start with DeepSeek as primary
+current_ai_mode = AI_MODE_DEEPSEEK
+
+def get_ai_model_name():
+    """Get the name of the current AI model being used."""
+    if current_ai_mode == AI_MODE_OPENAI:
+        return "OpenAI GPT-4o"
+    elif current_ai_mode == AI_MODE_DEEPSEEK:
+        return "DeepSeek AI"
+    else:
+        return "Local AI (Fallback)"
 
 @chat_bp.route('/')
 def index():
@@ -34,10 +48,17 @@ def index():
     # Get remaining messages for the user
     remaining_messages = get_remaining_messages()
     
+    # Get the current AI model information
+    ai_info = {
+        'mode': current_ai_mode,
+        'name': get_ai_model_name(),
+        'is_local': current_ai_mode == AI_MODE_LOCAL
+    }
+    
     return render_template('index.html', 
                           chat_history=chat_history, 
                           remaining_messages=remaining_messages,
-                          local_mode=not openai_api_available)
+                          ai_info=ai_info)
 
 @chat_bp.route('/api/chat', methods=['POST'])
 def chat():
@@ -78,26 +99,49 @@ def chat():
         # Update chat history after adding user message
         chat_history = get_chat_history()
         
-        # Format messages for API
+        # Format messages for API (all services use the same format)
         formatted_messages = ai_service.format_messages_for_api(chat_history)
         
-        # Get response from appropriate AI service based on API availability
-        global openai_api_available
+        # Get response from the appropriate AI service based on current mode
+        global current_ai_mode
         try:
-            if openai_api_available:
-                # Try to get response from OpenAI
+            if current_ai_mode == AI_MODE_DEEPSEEK:
+                # Try DeepSeek AI first
+                logger.info("Using DeepSeek AI service")
+                ai_response = deepseek_ai_service.get_chat_response(formatted_messages)
+            elif current_ai_mode == AI_MODE_OPENAI:
+                # Use OpenAI as backup
+                logger.info("Using OpenAI service")
                 ai_response = ai_service.get_chat_response(formatted_messages)
             else:
-                # Use local AI service if OpenAI API is unavailable
-                logger.info("Using local AI service due to OpenAI API unavailability")
+                # Use local AI service as last resort
+                logger.info("Using local AI service")
                 ai_response = local_ai_service.get_chat_response(formatted_messages)
         except Exception as e:
             error_message = str(e)
-            if error_message == "API_QUOTA_EXCEEDED" or error_message == "API_KEY_INVALID":
-                # Switch to local AI service and remember OpenAI is unavailable
-                openai_api_available = False
-                logger.warning(f"Switching to local AI service due to OpenAI API error: {error_message}")
-                ai_response = local_ai_service.get_chat_response(formatted_messages)
+            
+            if error_message in ["API_QUOTA_EXCEEDED", "API_KEY_INVALID", "DEEPSEEK_API_KEY_MISSING"]:
+                logger.warning(f"Error with AI service: {error_message}")
+                
+                # If DeepSeek fails, try OpenAI
+                if current_ai_mode == AI_MODE_DEEPSEEK:
+                    try:
+                        logger.info("DeepSeek error, falling back to OpenAI")
+                        current_ai_mode = AI_MODE_OPENAI
+                        ai_response = ai_service.get_chat_response(formatted_messages)
+                    except Exception as openai_error:
+                        # If OpenAI also fails, use local fallback
+                        logger.warning(f"OpenAI also failed: {str(openai_error)}, using local fallback")
+                        current_ai_mode = AI_MODE_LOCAL
+                        ai_response = local_ai_service.get_chat_response(formatted_messages)
+                # If OpenAI fails, use local fallback
+                elif current_ai_mode == AI_MODE_OPENAI:
+                    logger.info("OpenAI error, falling back to local service")
+                    current_ai_mode = AI_MODE_LOCAL
+                    ai_response = local_ai_service.get_chat_response(formatted_messages)
+                else:
+                    # Re-raise if we're already in local mode and still getting errors
+                    raise
             else:
                 # Re-raise other exceptions to be handled by the outer try-except
                 raise
@@ -111,10 +155,17 @@ def chat():
         # Get remaining messages for the response
         remaining_messages = get_remaining_messages()
         
+        # Get AI model info for the response
+        ai_info = {
+            'mode': current_ai_mode,
+            'name': get_ai_model_name(),
+            'is_local': current_ai_mode == AI_MODE_LOCAL
+        }
+        
         return jsonify({
             'response': ai_response,
             'remaining_messages': remaining_messages,
-            'local_mode': not openai_api_available
+            'ai_info': ai_info
         })
         
     except Exception as e:
