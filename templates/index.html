@@ -24,6 +24,12 @@
                     </button>
                 </div>
             </div>
+            {% if local_mode %}
+            <div class="alert alert-warning m-2 mb-0" role="alert">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Running in Local Mode:</strong> OpenAI API is currently unavailable. Responses will be limited.
+            </div>
+            {% endif %}
             <div class="card-body">
                 <div id="chat-container" class="mb-3">
                     <div id="messages" class="messages-container">

@@ -36,7 +36,8 @@ def index():
     
     return render_template('index.html', 
                           chat_history=chat_history, 
-                          remaining_messages=remaining_messages)
+                          remaining_messages=remaining_messages,
+                          local_mode=not openai_api_available)
 
 @chat_bp.route('/api/chat', methods=['POST'])
 def chat():
@@ -77,11 +78,29 @@ def chat():
         # Update chat history after adding user message
         chat_history = get_chat_history()
         
-        # Format messages for OpenAI API
+        # Format messages for API
         formatted_messages = ai_service.format_messages_for_api(chat_history)
         
-        # Get response from AI service
-        ai_response = ai_service.get_chat_response(formatted_messages)
+        # Get response from appropriate AI service based on API availability
+        global openai_api_available
+        try:
+            if openai_api_available:
+                # Try to get response from OpenAI
+                ai_response = ai_service.get_chat_response(formatted_messages)
+            else:
+                # Use local AI service if OpenAI API is unavailable
+                logger.info("Using local AI service due to OpenAI API unavailability")
+                ai_response = local_ai_service.get_chat_response(formatted_messages)
+        except Exception as e:
+            error_message = str(e)
+            if error_message == "API_QUOTA_EXCEEDED" or error_message == "API_KEY_INVALID":
+                # Switch to local AI service and remember OpenAI is unavailable
+                openai_api_available = False
+                logger.warning(f"Switching to local AI service due to OpenAI API error: {error_message}")
+                ai_response = local_ai_service.get_chat_response(formatted_messages)
+            else:
+                # Re-raise other exceptions to be handled by the outer try-except
+                raise
         
         # Add AI response to chat history
         add_message_to_history('assistant', ai_response)
@@ -94,7 +113,8 @@ def chat():
         
         return jsonify({
             'response': ai_response,
-            'remaining_messages': remaining_messages
+            'remaining_messages': remaining_messages,
+            'local_mode': not openai_api_available
         })
         
     except Exception as e:

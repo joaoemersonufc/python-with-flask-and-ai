@@ -76,7 +76,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             } else if (data.error === 'openai_quota_exceeded') {
                 // API quota exceeded error
-                showErrorMessage('OpenAI API quota exceeded. Please try again later or contact the administrator.');
+                showLocalModeWarning();
+                showErrorMessage('OpenAI API quota exceeded. Switching to local mode with limited responses.');
                 return;
             } else if (data.error === 'openai_rate_limited') {
                 // API rate limited error
@@ -84,7 +85,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             } else if (data.error === 'openai_key_invalid') {
                 // API key invalid error
-                showErrorMessage('OpenAI API key is invalid or has expired. Please contact the administrator.');
+                showLocalModeWarning();
+                showErrorMessage('OpenAI API key is invalid. Switching to local mode with limited responses.');
                 return;
             } else if (!response.ok) {
                 throw new Error('Failed to get response');
@@ -96,6 +98,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Update remaining messages counter
             if (data.remaining_messages !== undefined) {
                 updateRemainingMessages(data.remaining_messages);
+            }
+            
+            // Check if we've switched to local mode
+            if (data.local_mode === true) {
+                showLocalModeWarning();
             }
             
             // Scroll to bottom
@@ -273,6 +280,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Scroll to bottom of messages container
     function scrollToBottom() {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    // Function to show local mode warning if not already shown
+    function showLocalModeWarning() {
+        // Check if warning already exists
+        if (!document.querySelector('.local-mode-alert')) {
+            const warningDiv = document.createElement('div');
+            warningDiv.className = 'alert alert-warning m-2 local-mode-alert';
+            warningDiv.setAttribute('role', 'alert');
+            warningDiv.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                <strong>Running in Local Mode:</strong> OpenAI API is currently unavailable. Responses will be limited.
+            `;
+            
+            // Insert after card header
+            const cardHeader = document.querySelector('.card-header');
+            cardHeader.parentNode.insertBefore(warningDiv, cardHeader.nextSibling);
+        }
     }
     
     // Check rate limit on page load
