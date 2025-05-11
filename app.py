@@ -10,6 +10,7 @@ from flask_login import LoginManager
 from werkzeug.middleware.proxy_fix import ProxyFix
 from models import db, User
 from routes.chat_routes import chat_bp
+from routes.auth_routes import auth_bp
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
@@ -56,6 +57,7 @@ def load_user(user_id):
 
 # Register blueprints
 app.register_blueprint(chat_bp)
+app.register_blueprint(auth_bp)
 
 with app.app_context():
     # Create database tables

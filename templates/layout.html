@@ -29,10 +29,35 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item">
-                            <a class="nav-link" href="/" title="Home">
+                            <a class="nav-link" href="{{ url_for('chat.index') }}" title="Home">
                                 <i class="fas fa-home me-1"></i> Home
                             </a>
                         </li>
+                        {% if current_user.is_authenticated %}
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-user me-1"></i> {{ current_user.username }}
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                    <li>
+                                        <a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                            <i class="fas fa-sign-out-alt me-1"></i> Logout
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        {% else %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('auth.login') }}" title="Sign In">
+                                    <i class="fas fa-sign-in-alt me-1"></i> Sign In
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('auth.register') }}" title="Register">
+                                    <i class="fas fa-user-plus me-1"></i> Register
+                                </a>
+                            </li>
+                        {% endif %}
                     </ul>
                 </div>
             </div>
