@@ -63,8 +63,18 @@ class AIService:
             return ai_response
             
         except Exception as e:
-            logger.error(f"Error getting response from OpenAI: {str(e)}")
-            raise Exception(f"Failed to get AI response: {str(e)}")
+            error_message = str(e)
+            logger.error(f"Error getting response from OpenAI: {error_message}")
+            
+            # Check for specific error types
+            if "insufficient_quota" in error_message or "429" in error_message:
+                raise Exception("API_QUOTA_EXCEEDED")
+            elif "rate_limit" in error_message:
+                raise Exception("API_RATE_LIMITED")
+            elif "invalid_api_key" in error_message or "authentication" in error_message.lower():
+                raise Exception("API_KEY_INVALID")
+            else:
+                raise Exception(f"Failed to get AI response: {error_message}")
 
     def format_messages_for_api(self, chat_history: List[Dict[str, Any]]) -> List[Dict[str, str]]:
         """

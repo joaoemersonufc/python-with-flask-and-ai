@@ -69,13 +69,24 @@ document.addEventListener('DOMContentLoaded', function() {
             // Hide typing indicator
             hideTypingIndicator();
             
-            // Check for rate limit error
+            // Check for specific errors
             if (response.status === 429 && data.error === 'rate_limit_exceeded') {
+                // User rate limit error
                 handleRateLimit(data.limit_info);
                 return;
-            }
-            
-            if (!response.ok) {
+            } else if (data.error === 'openai_quota_exceeded') {
+                // API quota exceeded error
+                showErrorMessage('OpenAI API quota exceeded. Please try again later or contact the administrator.');
+                return;
+            } else if (data.error === 'openai_rate_limited') {
+                // API rate limited error
+                showErrorMessage('OpenAI API is currently rate limited. Please try again in a few minutes.');
+                return;
+            } else if (data.error === 'openai_key_invalid') {
+                // API key invalid error
+                showErrorMessage('OpenAI API key is invalid or has expired. Please contact the administrator.');
+                return;
+            } else if (!response.ok) {
                 throw new Error('Failed to get response');
             }
             
@@ -95,7 +106,26 @@ document.addEventListener('DOMContentLoaded', function() {
             hideTypingIndicator();
             
             // Show error message
-            addMessageToChat('ai', 'Sorry, I encountered an error. Please try again later.');
+            showErrorMessage('Sorry, I encountered an error. Please try again later.');
+            scrollToBottom();
+        }
+        
+        // Helper function to show error message in chat
+        function showErrorMessage(message) {
+            // Add system message to chat
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = 'message-wrapper system-message';
+            
+            messageWrapper.innerHTML = `
+                <div class="message error-message">
+                    <div class="message-header">
+                        <strong><i class="fas fa-exclamation-circle"></i> System</strong>
+                    </div>
+                    <div class="message-content">${escapeHtml(message)}</div>
+                </div>
+            `;
+            
+            messagesContainer.appendChild(messageWrapper);
             scrollToBottom();
         }
     });

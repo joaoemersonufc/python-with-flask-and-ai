@@ -9,6 +9,7 @@ from flask import (
 from flask_login import current_user, login_required
 
 from services.ai_service import AIService
+from services.local_ai_service import LocalAIService
 from utils.session_utils import get_chat_history, add_message_to_history, clear_chat_history
 from utils.db_rate_limit import check_rate_limit, increment_message_count, get_remaining_messages
 
@@ -17,8 +18,12 @@ logger = logging.getLogger(__name__)
 # Create a blueprint
 chat_bp = Blueprint('chat', __name__)
 
-# Initialize AI service
+# Initialize AI services
 ai_service = AIService()
+local_ai_service = LocalAIService()
+
+# Flag to indicate if OpenAI API is usable
+openai_api_available = True
 
 @chat_bp.route('/')
 def index():
@@ -93,8 +98,34 @@ def chat():
         })
         
     except Exception as e:
-        logger.error(f"Error in chat endpoint: {str(e)}")
-        return jsonify({'error': 'An error occurred processing your request.'}), 500
+        error_message = str(e)
+        logger.error(f"Error in chat endpoint: {error_message}")
+        
+        # Handle specific error types
+        if error_message == "API_QUOTA_EXCEEDED":
+            # API quota exceeded error
+            return jsonify({
+                'error': 'openai_quota_exceeded',
+                'message': 'The OpenAI API quota has been exceeded. Please try again later or contact the administrator.'
+            }), 503
+        elif error_message == "API_RATE_LIMITED":
+            # API rate limited error
+            return jsonify({
+                'error': 'openai_rate_limited',
+                'message': 'The OpenAI API is currently rate limited. Please try again in a few minutes.'
+            }), 429
+        elif error_message == "API_KEY_INVALID":
+            # API key invalid error
+            return jsonify({
+                'error': 'openai_key_invalid',
+                'message': 'The OpenAI API key is invalid or has expired. Please contact the administrator.'
+            }), 401
+        else:
+            # Generic error
+            return jsonify({
+                'error': 'server_error',
+                'message': 'An error occurred processing your request. Please try again later.'
+            }), 500
 
 @chat_bp.route('/api/chat/clear', methods=['POST'])
 def clear_chat():

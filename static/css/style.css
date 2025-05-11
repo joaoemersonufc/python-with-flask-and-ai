@@ -64,6 +64,21 @@ main {
     border-top-left-radius: 0.25rem;
 }
 
+.system-message {
+    justify-content: center;
+}
+
+.system-message .message {
+    max-width: 95%;
+    text-align: center;
+}
+
+.error-message {
+    background-color: var(--bs-danger);
+    color: white;
+    font-weight: 500;
+}
+
 .message-header {
     margin-bottom: 0.5rem;
     font-size: 0.85rem;
