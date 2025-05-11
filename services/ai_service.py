@@ -50,7 +50,15 @@ class AIService:
             
             # Extract and return the AI's response
             ai_response = response.choices[0].message.content
-            logger.debug(f"Received response from OpenAI: {ai_response[:50]}...")
+            if ai_response:
+                logger.debug(f"Received response from OpenAI: {ai_response[:50]}...")
+            else:
+                logger.warning("Received an empty response from OpenAI.")
+            
+            # Check if the AI response is None before returning
+            if ai_response is None:
+                logger.warning("AI response is None. Returning an empty string.")
+                return ""
             
             return ai_response
             
