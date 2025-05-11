@@ -2,15 +2,21 @@
 Main Flask application entry point.
 Initializes the app, configurations, and registers blueprints.
 """
-import os
 import logging
+import os
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from flask import Flask
-from flask_session import Session
 from flask_login import LoginManager
 from werkzeug.middleware.proxy_fix import ProxyFix
-from models import db, User
-from routes.chat_routes import chat_bp
+
+from flask_session import Session
+from models import User, db
 from routes.auth_routes import auth_bp
+from routes.chat_routes import chat_bp
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)
