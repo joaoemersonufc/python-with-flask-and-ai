@@ -9,6 +9,22 @@ main {
     flex: 1;
 }
 
+/* Usage counter styles */
+.usage-counter {
+    display: flex;
+    align-items: center;
+}
+
+.usage-counter .badge {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.65rem;
+}
+
+/* Countdown timer styles */
+.countdown-timer {
+    margin: 1.5rem 0;
+}
+
 /* Chat interface styles */
 .messages-container {
     max-height: 60vh;

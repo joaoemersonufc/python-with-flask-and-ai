@@ -9,6 +9,7 @@ from flask import (
 
 from services.ai_service import AIService
 from utils.session_utils import get_chat_history, add_message_to_history, clear_chat_history
+from utils.rate_limit import check_rate_limit, increment_message_count, get_remaining_messages
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,12 @@ def index():
     # Get chat history from session
     chat_history = get_chat_history()
     
-    return render_template('index.html', chat_history=chat_history)
+    # Get remaining messages for the user
+    remaining_messages = get_remaining_messages()
+    
+    return render_template('index.html', 
+                          chat_history=chat_history, 
+                          remaining_messages=remaining_messages)
 
 @chat_bp.route('/api/chat', methods=['POST'])
 def chat():
@@ -33,8 +39,18 @@ def chat():
     
     Expects JSON with format: {'message': 'user message here'}
     Returns JSON with format: {'response': 'AI response here'}
+    
+    Rate limited for free tier usage.
     """
     try:
+        # Check rate limit before processing
+        is_limited, limit_info = check_rate_limit()
+        if is_limited:
+            return jsonify({
+                'error': 'rate_limit_exceeded',
+                'limit_info': limit_info
+            }), 429
+        
         # Get user message from request
         data = request.get_json()
         
@@ -64,7 +80,16 @@ def chat():
         # Add AI response to chat history
         add_message_to_history('assistant', ai_response)
         
-        return jsonify({'response': ai_response})
+        # Increment message count for rate limiting
+        increment_message_count()
+        
+        # Get remaining messages for the response
+        remaining_messages = get_remaining_messages()
+        
+        return jsonify({
+            'response': ai_response,
+            'remaining_messages': remaining_messages
+        })
         
     except Exception as e:
         logger.error(f"Error in chat endpoint: {str(e)}")
@@ -79,3 +104,19 @@ def clear_chat():
     except Exception as e:
         logger.error(f"Error clearing chat history: {str(e)}")
         return jsonify({'error': 'Failed to clear chat history.'}), 500
+
+@chat_bp.route('/api/usage', methods=['GET'])
+def get_usage():
+    """Get the current usage info and limits."""
+    try:
+        is_limited, limit_info = check_rate_limit()
+        remaining = get_remaining_messages()
+        
+        return jsonify({
+            'is_limited': is_limited,
+            'remaining_messages': remaining,
+            'limit_info': limit_info if is_limited else None
+        })
+    except Exception as e:
+        logger.error(f"Error getting usage info: {str(e)}")
+        return jsonify({'error': 'Failed to get usage information.'}), 500

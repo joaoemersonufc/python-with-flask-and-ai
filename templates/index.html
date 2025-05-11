@@ -12,9 +12,17 @@
                 <h3 class="mb-0">
                     <i class="fas fa-comment-dots me-2"></i>Chat with AI
                 </h3>
-                <button id="clear-chat" class="btn btn-sm btn-outline-secondary">
-                    <i class="fas fa-trash-alt me-1"></i>Clear Chat
-                </button>
+                <div class="d-flex">
+                    <div id="usage-counter" class="usage-counter me-3">
+                        <span class="badge bg-info">
+                            <i class="fas fa-message me-1"></i>
+                            <span id="remaining-messages">{{ remaining_messages }}</span> messages left
+                        </span>
+                    </div>
+                    <button id="clear-chat" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-trash-alt me-1"></i>Clear Chat
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <div id="chat-container" class="mb-3">
@@ -35,6 +43,9 @@
                                 <i class="fas fa-robot fa-4x mb-3 text-secondary"></i>
                                 <h4>Start a conversation</h4>
                                 <p class="text-secondary">Ask me anything, and I'll do my best to help you.</p>
+                                <p class="mt-3">
+                                    <small class="text-info">Free tier: {{ remaining_messages }} messages every 3 hours</small>
+                                </p>
                             </div>
                         {% endif %}
                     </div>
@@ -61,6 +72,32 @@
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rate Limit Modal -->
+<div class="modal fade" id="rate-limit-modal" tabindex="-1" aria-labelledby="rateLimitModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rateLimitModalLabel">Message Limit Reached</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <i class="fas fa-clock fa-4x mb-3 text-warning"></i>
+                <h4>You've reached your free message limit</h4>
+                <p>You can send more messages after:</p>
+                <div class="countdown-timer">
+                    <span id="countdown-timer" class="display-6 text-info"></span>
+                </div>
+                <p class="mt-3 text-secondary">
+                    Free tier includes <span id="message-limit"></span> messages every 3 hours.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
