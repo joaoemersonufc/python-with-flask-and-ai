@@ -1,0 +1,127 @@
+/* Core layout styles */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+main {
+    flex: 1;
+}
+
+/* Chat interface styles */
+.messages-container {
+    max-height: 60vh;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+    padding-right: 0.5rem;
+}
+
+.message-wrapper {
+    display: flex;
+    margin-bottom: 1rem;
+}
+
+.user-message {
+    justify-content: flex-end;
+}
+
+.ai-message {
+    justify-content: flex-start;
+}
+
+.message {
+    max-width: 85%;
+    padding: 0.75rem 1rem;
+    border-radius: 1rem;
+    position: relative;
+}
+
+.user-message .message {
+    background-color: var(--bs-primary);
+    color: white;
+    border-top-right-radius: 0.25rem;
+}
+
+.ai-message .message {
+    background-color: var(--bs-dark);
+    border-top-left-radius: 0.25rem;
+}
+
+.message-header {
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+.message-content {
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Auto-resize textarea */
+#user-input {
+    resize: none;
+    overflow: hidden;
+    min-height: 38px;
+    max-height: 200px;
+}
+
+/* Typing indicator animation */
+.typing-indicator {
+    padding: 0.5rem 1rem;
+    background-color: var(--bs-dark);
+    border-radius: 1rem;
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.typing-animation {
+    display: flex;
+    align-items: center;
+    margin-right: 0.5rem;
+}
+
+.typing-animation span {
+    height: 8px;
+    width: 8px;
+    background-color: var(--bs-secondary);
+    border-radius: 50%;
+    display: inline-block;
+    margin: 0 1px;
+    animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-animation span:nth-child(1) {
+    animation-delay: 0s;
+}
+
+.typing-animation span:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.typing-animation span:nth-child(3) {
+    animation-delay: 0.4s;
+}
+
+@keyframes typing {
+    0%, 60%, 100% {
+        transform: translateY(0);
+    }
+    30% {
+        transform: translateY(-6px);
+    }
+}
+
+/* Empty state styling */
+.empty-state {
+    color: var(--bs-secondary);
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .message {
+        max-width: 90%;
+    }
+}

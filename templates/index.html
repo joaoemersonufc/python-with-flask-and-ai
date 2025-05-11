@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+
+{% block head %}
+<meta name="description" content="AI-powered chat assistant">
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">
+                    <i class="fas fa-comment-dots me-2"></i>Chat with AI
+                </h3>
+                <button id="clear-chat" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-trash-alt me-1"></i>Clear Chat
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="chat-container" class="mb-3">
+                    <div id="messages" class="messages-container">
+                        {% if chat_history and chat_history|length > 0 %}
+                            {% for message in chat_history %}
+                                <div class="message-wrapper {{ 'user-message' if message.role == 'user' else 'ai-message' }}">
+                                    <div class="message">
+                                        <div class="message-header">
+                                            <strong>{{ 'You' if message.role == 'user' else 'AI Assistant' }}</strong>
+                                        </div>
+                                        <div class="message-content">{{ message.content }}</div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="empty-state text-center py-5">
+                                <i class="fas fa-robot fa-4x mb-3 text-secondary"></i>
+                                <h4>Start a conversation</h4>
+                                <p class="text-secondary">Ask me anything, and I'll do my best to help you.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div id="typing-indicator" class="typing-indicator d-none">
+                    <div class="typing-animation">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <p>AI is thinking...</p>
+                </div>
+                
+                <form id="chat-form" class="d-flex">
+                    <textarea 
+                        id="user-input" 
+                        class="form-control me-2" 
+                        placeholder="Type your message..." 
+                        rows="1" 
+                        required
+                        autofocus></textarea>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+{% endblock %}
