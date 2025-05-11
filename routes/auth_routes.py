@@ -64,7 +64,9 @@ def register():
     form = RegistrationForm()
     if form.validate_on_submit():
         # Create a new user
-        user = User(username=form.username.data, email=form.email.data)
+        user = User()
+        user.username = form.username.data
+        user.email = form.email.data
         user.set_password(form.password.data)
         
         # Add to database

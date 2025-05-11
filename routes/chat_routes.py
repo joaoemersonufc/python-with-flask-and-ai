@@ -4,12 +4,13 @@ Routes for the chat functionality of the application.
 import logging
 from flask import (
     Blueprint, render_template, request, jsonify, 
-    session, redirect, url_for
+    session, redirect, url_for, flash
 )
+from flask_login import current_user, login_required
 
 from services.ai_service import AIService
 from utils.session_utils import get_chat_history, add_message_to_history, clear_chat_history
-from utils.rate_limit import check_rate_limit, increment_message_count, get_remaining_messages
+from utils.db_rate_limit import check_rate_limit, increment_message_count, get_remaining_messages
 
 logger = logging.getLogger(__name__)
 
